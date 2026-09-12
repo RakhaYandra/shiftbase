@@ -13,8 +13,9 @@ import (
 )
 
 type EmployeeHandler struct {
-	Svc   *service.EmployeeService
-	Repos *repository.EmployeeRepository
+	Svc      *service.EmployeeService
+	Repos    *repository.EmployeeRepository
+	Importer *service.ImportService
 }
 
 type employeeIn struct {

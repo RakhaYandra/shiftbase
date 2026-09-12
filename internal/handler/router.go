@@ -8,9 +8,10 @@ import (
 )
 
 type Deps struct {
-	Auth     *AuthHandler
-	Employee *EmployeeHandler
-	Shift    *ShiftHandler
+	Auth       *AuthHandler
+	Employee   *EmployeeHandler
+	Shift      *ShiftHandler
+	Attendance *AttendanceHandler
 }
 
 func NewRouter(d *Deps, secret string) *gin.Engine {
@@ -30,6 +31,7 @@ func NewRouter(d *Deps, secret string) *gin.Engine {
 	emp.GET("/:id", middleware.RequireRole("admin", "manager"), d.Employee.Get)
 	emp.PUT("/:id", middleware.RequireRole("admin"), d.Employee.Update)
 	emp.DELETE("/:id", middleware.RequireRole("admin"), d.Employee.Delete)
+	emp.POST("/import", middleware.RequireRole("admin", "manager"), d.Employee.Import)
 
 	sh := auth.Group("/shifts")
 	sh.POST("", middleware.RequireRole("admin", "manager"), d.Shift.Create)
@@ -37,5 +39,10 @@ func NewRouter(d *Deps, secret string) *gin.Engine {
 	sh.GET("/:id", d.Shift.Get)
 	sh.PUT("/:id", middleware.RequireRole("admin", "manager"), d.Shift.Update)
 	sh.DELETE("/:id", middleware.RequireRole("admin", "manager"), d.Shift.Delete)
+
+	att := auth.Group("/attendance")
+	att.POST("/check-in", d.Attendance.CheckIn)
+	att.POST("/check-out", d.Attendance.CheckOut)
+	att.GET("", d.Attendance.List)
 	return r
 }

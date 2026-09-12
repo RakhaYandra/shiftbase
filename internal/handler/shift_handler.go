@@ -13,8 +13,8 @@ import (
 )
 
 type ShiftHandler struct {
-	Svc      *service.ShiftService
-	Shifts   *repository.ShiftRepository
+	Svc       *service.ShiftService
+	Shifts    *repository.ShiftRepository
 	Employees *repository.EmployeeRepository
 }
 
