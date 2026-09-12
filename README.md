@@ -73,8 +73,10 @@ Zona bisnis Asia/Jakarta (UTC+7, fixed — aman tanpa tzdata di distroless).
 ## Coba via Swagger / Postman
 
 ```bash
-# Swagger UI ( Tanpa tambah kode):
-docker run --rm -p 8081:8080 -e SWAGGER_JSON=/swagger.yaml -v $PWD/api:/swagger swaggerapi/swagger-ui
+# Swagger UI (tanpa tambah kode):
+docker run --rm -d --name swagger-ui -p 8081:8080 \
+  -v $PWD/api/swagger.yaml:/usr/share/nginx/html/swagger.yaml:ro \
+  -e "URLS=[{url: '/swagger.yaml', name: 'shiftbase'}]" swaggerapi/swagger-ui
 # → http://localhost:8081, Authorize dengan token dari /v1/auth/login
 
 # Newman (butuh API + DB jalan):
