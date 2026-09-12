@@ -25,6 +25,7 @@ services:
       PORT: 8080
       DB_DSN: "shift:shiftpass@tcp(mysql:3306)/shiftbase?parseTime=true&loc=Local"
       JWT_SECRET: ${JWT_SECRET:-dev-secret-ganti-di-prod}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     ports:
       - "8080:8080"
 

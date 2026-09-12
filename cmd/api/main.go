@@ -48,7 +48,7 @@ func main() {
 		Svc: &service.ReportService{Reports: reports},
 	}
 
-	r := handler.NewRouter(&handler.Deps{Auth: authH, Employee: empH, Shift: shiftH, Attendance: attH, Report: repH}, cfg.JWTSecret)
+	r := handler.NewRouter(&handler.Deps{Auth: authH, Employee: empH, Shift: shiftH, Attendance: attH, Report: repH}, cfg.JWTSecret, cfg.FrontendURL)
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatal(err)
 	}

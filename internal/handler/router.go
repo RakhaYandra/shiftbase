@@ -15,9 +15,9 @@ type Deps struct {
 	Report     *ReportHandler
 }
 
-func NewRouter(d *Deps, secret string) *gin.Engine {
+func NewRouter(d *Deps, secret, frontendURL string) *gin.Engine {
 	r := gin.New()
-	r.Use(gin.Logger(), gin.Recovery())
+	r.Use(gin.Logger(), gin.Recovery(), middleware.CORS(frontendURL))
 	r.GET("/healthz", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
 	v1 := r.Group("/v1")
 	v1.POST("/auth/register", d.Auth.Register)
