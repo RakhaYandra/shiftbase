@@ -18,10 +18,24 @@ func main() {
 	defer db.Close()
 
 	users := &repository.UserRepository{DB: db}
-	authSvc := &service.AuthService{Users: users, Secret: cfg.JWTSecret}
-	authH := &handler.AuthHandler{Svc: authSvc, Users: users}
+	employees := &repository.EmployeeRepository{DB: db}
+	shifts := &repository.ShiftRepository{DB: db}
 
-	r := handler.NewRouter(authH, cfg.JWTSecret)
+	authH := &handler.AuthHandler{
+		Svc:   &service.AuthService{Users: users, Secret: cfg.JWTSecret},
+		Users: users,
+	}
+	empH := &handler.EmployeeHandler{
+		Svc:   &service.EmployeeService{Employees: employees},
+		Repos: employees,
+	}
+	shiftH := &handler.ShiftHandler{
+		Svc:       &service.ShiftService{Shifts: shifts},
+		Shifts:    shifts,
+		Employees: employees,
+	}
+
+	r := handler.NewRouter(&handler.Deps{Auth: authH, Employee: empH, Shift: shiftH}, cfg.JWTSecret)
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatal(err)
 	}
