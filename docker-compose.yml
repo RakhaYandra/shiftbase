@@ -1,0 +1,39 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: shiftbase
+      MYSQL_USER: shift
+      MYSQL_PASSWORD: shiftpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      PORT: 8080
+      DB_DSN: "shift:shiftpass@tcp(mysql:3306)/shiftbase?parseTime=true&loc=Local"
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-ganti-di-prod}
+    ports:
+      - "8080:8080"
+
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8082:8080"
+    depends_on:
+      - mysql
+
+volumes:
+  mysql-data: {}

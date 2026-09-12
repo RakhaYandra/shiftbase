@@ -1,0 +1,8 @@
+.env
+shiftbase
+*.test
+*.out
+/bin/
+/dist/
+.idea/
+.vscode/
