@@ -44,7 +44,7 @@ func (r *ShiftRepository) List(date string, employeeID int64) ([]*ShiftRow, erro
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 	var out []*ShiftRow
 	for rows.Next() {
 		s, err := scanShift(rows)

@@ -44,7 +44,7 @@ func (r *EmployeeRepository) List() ([]*domain.Employee, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 	var out []*domain.Employee
 	for rows.Next() {
 		e, err := scanEmployee(rows)

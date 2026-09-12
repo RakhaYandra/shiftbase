@@ -15,7 +15,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("db: %v", err)
 	}
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	users := &repository.UserRepository{DB: db}
 	employees := &repository.EmployeeRepository{DB: db}

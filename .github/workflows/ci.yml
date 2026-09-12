@@ -1,0 +1,40 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: rootpass
+          MYSQL_DATABASE: shiftbase
+          MYSQL_USER: shift
+          MYSQL_PASSWORD: shiftpass
+        ports: ["3306:3306"]
+        options: --health-cmd="mysqladmin ping -h localhost" --health-interval=5s --health-timeout=3s --health-retries=20
+    env:
+      DB_DSN: "shift:shiftpass@tcp(127.0.0.1:3306)/shiftbase?parseTime=true&loc=Local"
+      JWT_SECRET: ci-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: "1.27", cache: true }
+      - run: go vet ./...
+      - uses: golangci/golangci-lint-action@v8
+        with: { version: latest }
+      - run: go test ./... -coverprofile=cover.out
+      - name: coverage service >= 60%
+        run: |
+          PCT=$(go tool cover -func=cover.out | grep 'internal/service' | awk '{s+=$3} END {print s/NR}' | tr -d '%')
+          echo "service coverage: $PCT%"; test "${PCT%.*}" -ge 60
+      - run: go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
+      - run: goose -dir migrations mysql "$DB_DSN" up
+      - run: mysql -h127.0.0.1 -ushift -pshiftpass shiftbase < seed/seed.sql
+      - run: go build -o /tmp/shiftbase ./cmd/api
+      - run: |
+          PORT=8080 JWT_SECRET=ci-secret DB_DSN="$DB_DSN" /tmp/shiftbase &
+          for i in $(seq 1 20); do curl -sf http://localhost:8080/healthz && break || sleep 3; done
+          curl -sf http://localhost:8080/healthz
+      - run: npx --yes newman run api/postman_collection.json --env-var baseUrl=http://localhost:8080
+      - run: npx --yes @apidevtools/swagger-cli validate api/swagger.yaml

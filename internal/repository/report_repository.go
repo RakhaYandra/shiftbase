@@ -26,7 +26,7 @@ func (r *ReportRepository) Overtime(from, to string) ([]*OvertimeRow, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 	var out []*OvertimeRow
 	for rows.Next() {
 		var o OvertimeRow
@@ -44,7 +44,7 @@ func (r *ReportRepository) Coverage(date string) ([]*CoverageRow, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 	var out []*CoverageRow
 	for rows.Next() {
 		var c CoverageRow

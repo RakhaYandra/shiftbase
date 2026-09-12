@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/RakhaYandra/shiftbase/internal/repository"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -14,7 +13,7 @@ var ErrInvalidCredentials = errors.New("email atau password salah")
 var ErrEmailTaken = errors.New("email sudah terdaftar")
 
 type AuthService struct {
-	Users  *repository.UserRepository
+	Users  UserStore
 	Secret string
 }
 

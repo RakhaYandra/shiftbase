@@ -49,7 +49,7 @@ func (r *AttendanceRepository) List(employeeID int64, from, to string) ([]*Atten
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 	var out []*AttendanceRow
 	for rows.Next() {
 		var a AttendanceRow

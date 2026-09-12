@@ -25,7 +25,7 @@ type ImportResult struct {
 }
 
 type ImportService struct {
-	Employees *EmployeeService
+	Employees EmployeeCreator
 }
 
 var csvHeader = []string{"name", "email", "phone", "position", "hire_date"}

@@ -125,7 +125,7 @@ func (h *EmployeeHandler) Import(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "file tidak bisa dibaca"})
 		return
 	}
-	defer f.Close()
+	defer f.Close() //nolint:errcheck
 	res, err := h.Importer.ImportCSV(f)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

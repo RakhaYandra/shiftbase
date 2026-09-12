@@ -13,7 +13,7 @@ var WIB = time.FixedZone("WIB", 7*3600)
 func BusinessNow() time.Time { return time.Now().In(WIB) }
 
 type AttendanceService struct {
-	Attendance *repository.AttendanceRepository
+	Attendance AttendanceStore
 }
 
 func (s *AttendanceService) CheckIn(employeeID int64, now time.Time) error {

@@ -11,7 +11,7 @@ import (
 var ErrShiftConflict = errors.New("shift bertabrakan dengan jadwal lain")
 
 type EmployeeService struct {
-	Employees *repository.EmployeeRepository
+	Employees EmployeeCreator
 }
 
 func (s *EmployeeService) Create(e *domain.Employee) (int64, error) {
@@ -22,7 +22,7 @@ func (s *EmployeeService) Create(e *domain.Employee) (int64, error) {
 }
 
 type ShiftService struct {
-	Shifts *repository.ShiftRepository
+	Shifts ShiftStore
 }
 
 func validShift(date, start, end string) error {
