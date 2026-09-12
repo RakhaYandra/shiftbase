@@ -1,0 +1,249 @@
+openapi: 3.0.3
+info:
+  title: shiftbase API
+  description: Shift scheduling & attendance REST API (data contoh fiktif).
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: lokal (docker compose)
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Creds:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, example: admin@shiftbase.local }
+        password: { type: string, example: Admin123! }
+    EmployeeIn:
+      type: object
+      required: [name, email, hire_date]
+      properties:
+        name: { type: string, example: Ayu Lestari }
+        email: { type: string, format: email }
+        phone: { type: string, example: "0812000001" }
+        position: { type: string, default: staff }
+        hire_date: { type: string, format: date, example: "2024-01-15" }
+    ShiftIn:
+      type: object
+      required: [employee_id, date, start_time, end_time]
+      properties:
+        employee_id: { type: integer, example: 1 }
+        date: { type: string, format: date }
+        start_time: { type: string, example: "08:00" }
+        end_time: { type: string, example: "16:00" }
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+security: []
+paths:
+  /healthz:
+    get:
+      summary: Health check
+      operationId: health
+      responses:
+        "200": { description: ok }
+  /v1/auth/register:
+    post:
+      summary: Daftar (role default staff)
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: "#/components/schemas/Creds" } }
+      responses:
+        "201": { description: created }
+        "409": { description: email_taken, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+  /v1/auth/login:
+    post:
+      summary: Login, dapat JWT 24 jam
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: "#/components/schemas/Creds" } }
+      responses:
+        "200": { description: token }
+        "401": { description: invalid_credentials }
+  /v1/me:
+    get:
+      summary: Profil sendiri
+      operationId: me
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: profil }
+        "401": { description: unauthorized }
+  /v1/employees:
+    get:
+      summary: List employees (admin, manager)
+      operationId: listEmployees
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: ok }
+        "403": { description: forbidden }
+    post:
+      summary: Tambah employee (admin)
+      operationId: createEmployee
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: "#/components/schemas/EmployeeIn" } }
+      responses:
+        "201": { description: created }
+        "409": { description: email_taken }
+  /v1/employees/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      summary: Detail employee (admin, manager)
+      operationId: getEmployee
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: ok }
+        "404": { description: not_found }
+    put:
+      summary: Ubah employee (admin)
+      operationId: updateEmployee
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: "#/components/schemas/EmployeeIn" } }
+      responses:
+        "200": { description: ok }
+        "404": { description: not_found }
+    delete:
+      summary: Hapus employee (admin)
+      operationId: deleteEmployee
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: no content }
+  /v1/employees/import:
+    post:
+      summary: Import CSV (admin, manager) — maks 2MB
+      operationId: importEmployees
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "200": { description: "{imported, failed, errors:[{row,error}]}" }
+  /v1/shifts:
+    get:
+      summary: List shift; filter ?date=YYYY-MM-DD (staff otomatis miliknya)
+      operationId: listShifts
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: date, in: query, schema: { type: string, format: date } }
+        - { name: employee_id, in: query, schema: { type: integer } }
+      responses:
+        "200": { description: ok }
+    post:
+      summary: Buat shift (admin, manager) — bentrok → 409
+      operationId: createShift
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: "#/components/schemas/ShiftIn" } }
+      responses:
+        "201": { description: created }
+        "409": { description: shift_conflict }
+  /v1/shifts/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      summary: Detail shift
+      operationId: getShift
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: ok }
+        "404": { description: not_found }
+    put:
+      summary: Ubah shift (admin, manager)
+      operationId: updateShift
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: "#/components/schemas/ShiftIn" } }
+      responses:
+        "200": { description: ok }
+        "409": { description: shift_conflict }
+    delete:
+      summary: Hapus shift (admin, manager)
+      operationId: deleteShift
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: no content }
+  /v1/attendance/check-in:
+    post:
+      summary: Check-in hari ini (duplikat → 409)
+      operationId: checkIn
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                employee_id: { type: integer, description: wajib untuk admin/manager; staff otomatis sendiri }
+      responses:
+        "201": { description: checked_in }
+        "409": { description: attendance_duplicate }
+  /v1/attendance/check-out:
+    post:
+      summary: Check-out (tanpa check-in → 404)
+      operationId: checkOut
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                employee_id: { type: integer }
+      responses:
+        "200": { description: checked_out }
+        "404": { description: no_open_checkin }
+  /v1/attendance:
+    get:
+      summary: Riwayat absensi ?from=&to= (YYYY-MM-DD)
+      operationId: listAttendance
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: employee_id, in: query, schema: { type: integer } }
+      responses:
+        "200": { description: ok }
+  /v1/reports/overtime:
+    get:
+      summary: Lembur per employee (admin, manager)
+      operationId: overtime
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+      responses:
+        "200": { description: "[{employee_id,name,total_hours,overtime_hours}]" }
+  /v1/reports/coverage:
+    get:
+      summary: Headcount per tanggal (admin, manager)
+      operationId: coverage
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: date, in: query, schema: { type: string, format: date } }
+      responses:
+        "200": { description: "[{date,headcount}]" }

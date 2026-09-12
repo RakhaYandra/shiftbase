@@ -21,6 +21,7 @@ func main() {
 	employees := &repository.EmployeeRepository{DB: db}
 	shifts := &repository.ShiftRepository{DB: db}
 	attendance := &repository.AttendanceRepository{DB: db}
+	reports := &repository.ReportRepository{DB: db}
 
 	empSvc := &service.EmployeeService{Employees: employees}
 
@@ -43,8 +44,11 @@ func main() {
 		Attendance: attendance,
 		Employees:  employees,
 	}
+	repH := &handler.ReportHandler{
+		Svc: &service.ReportService{Reports: reports},
+	}
 
-	r := handler.NewRouter(&handler.Deps{Auth: authH, Employee: empH, Shift: shiftH, Attendance: attH}, cfg.JWTSecret)
+	r := handler.NewRouter(&handler.Deps{Auth: authH, Employee: empH, Shift: shiftH, Attendance: attH, Report: repH}, cfg.JWTSecret)
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatal(err)
 	}

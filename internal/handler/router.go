@@ -12,6 +12,7 @@ type Deps struct {
 	Employee   *EmployeeHandler
 	Shift      *ShiftHandler
 	Attendance *AttendanceHandler
+	Report     *ReportHandler
 }
 
 func NewRouter(d *Deps, secret string) *gin.Engine {
@@ -44,5 +45,9 @@ func NewRouter(d *Deps, secret string) *gin.Engine {
 	att.POST("/check-in", d.Attendance.CheckIn)
 	att.POST("/check-out", d.Attendance.CheckOut)
 	att.GET("", d.Attendance.List)
+
+	rep := auth.Group("/reports", middleware.RequireRole("admin", "manager"))
+	rep.GET("/overtime", d.Report.Overtime)
+	rep.GET("/coverage", d.Report.Coverage)
 	return r
 }

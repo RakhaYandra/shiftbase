@@ -1,0 +1,149 @@
+{
+  "info": {
+    "name": "shiftbase",
+    "description": "Newman CI: register/login/me, employees, shifts+409, attendance+409, reports.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "employeeId", "value": "" },
+    { "key": "shiftId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/healthz" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200', () => pm.response.to.have.status(200));"] } }]
+    },
+    {
+      "name": "register",
+      "request": {
+        "method": "POST", "url": "{{baseUrl}}/v1/auth/register",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"email\":\"test+{{$timestamp}}@example.com\",\"password\":\"Rahasia123\"}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('201', () => pm.response.to.have.status(201));"] } }]
+    },
+    {
+      "name": "login admin",
+      "request": {
+        "method": "POST", "url": "{{baseUrl}}/v1/auth/login",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"email\":\"admin@shiftbase.local\",\"password\":\"Admin123!\"}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('200', () => pm.response.to.have.status(200));",
+        "pm.collectionVariables.set('token', pm.response.json().token);"
+      ] } }]
+    },
+    {
+      "name": "me",
+      "request": {
+        "method": "GET", "url": "{{baseUrl}}/v1/me",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 admin', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().role).to.eql('admin'); });"] } }]
+    },
+    {
+      "name": "create employee",
+      "request": {
+        "method": "POST", "url": "{{baseUrl}}/v1/employees",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "body": { "mode": "raw", "raw": "{\"name\":\"Newman Test\",\"email\":\"newman+{{$timestamp}}@example.com\",\"phone\":\"0812000099\",\"position\":\"kasir\",\"hire_date\":\"2025-01-01\"}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('201', () => pm.response.to.have.status(201));",
+        "pm.collectionVariables.set('employeeId', pm.response.json().id);"
+      ] } }]
+    },
+    {
+      "name": "list employees",
+      "request": {
+        "method": "GET", "url": "{{baseUrl}}/v1/employees",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200', () => pm.response.to.have.status(200));"] } }]
+    },
+    {
+      "name": "create shift",
+      "request": {
+        "method": "POST", "url": "{{baseUrl}}/v1/shifts",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "body": { "mode": "raw", "raw": "{\"employee_id\":{{employeeId}},\"date\":\"2030-01-05\",\"start_time\":\"08:00\",\"end_time\":\"16:00\"}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('201', () => pm.response.to.have.status(201));",
+        "pm.collectionVariables.set('shiftId', pm.response.json().id);"
+      ] } }]
+    },
+    {
+      "name": "shift conflict 409",
+      "request": {
+        "method": "POST", "url": "{{baseUrl}}/v1/shifts",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "body": { "mode": "raw", "raw": "{\"employee_id\":{{employeeId}},\"date\":\"2030-01-05\",\"start_time\":\"12:00\",\"end_time\":\"20:00\"}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('409', () => pm.response.to.have.status(409));"] } }]
+    },
+    {
+      "name": "list shifts by date",
+      "request": {
+        "method": "GET", "url": "{{baseUrl}}/v1/shifts?date=2030-01-05",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 non-empty', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().length).to.be.above(0); });"] } }]
+    },
+    {
+      "name": "check-in",
+      "request": {
+        "method": "POST", "url": "{{baseUrl}}/v1/attendance/check-in",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "body": { "mode": "raw", "raw": "{\"employee_id\":{{employeeId}}}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('201', () => pm.response.to.have.status(201));"] } }]
+    },
+    {
+      "name": "check-in duplicate 409",
+      "request": {
+        "method": "POST", "url": "{{baseUrl}}/v1/attendance/check-in",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "body": { "mode": "raw", "raw": "{\"employee_id\":{{employeeId}}}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('409', () => pm.response.to.have.status(409));"] } }]
+    },
+    {
+      "name": "check-out",
+      "request": {
+        "method": "POST", "url": "{{baseUrl}}/v1/attendance/check-out",
+        "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+        "body": { "mode": "raw", "raw": "{\"employee_id\":{{employeeId}}}" }
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200', () => pm.response.to.have.status(200));"] } }]
+    },
+    {
+      "name": "list attendance",
+      "request": {
+        "method": "GET", "url": "{{baseUrl}}/v1/attendance",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200', () => pm.response.to.have.status(200));"] } }]
+    },
+    {
+      "name": "overtime",
+      "request": {
+        "method": "GET", "url": "{{baseUrl}}/v1/reports/overtime",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200', () => pm.response.to.have.status(200));"] } }]
+    },
+    {
+      "name": "coverage",
+      "request": {
+        "method": "GET", "url": "{{baseUrl}}/v1/reports/coverage?date=2030-01-05",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+      },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 headcount 1', () => { pm.response.to.have.status(200); pm.expect(pm.response.json()[0].headcount).to.eql(1); });"] } }]
+    }
+  ]
+}
