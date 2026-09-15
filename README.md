@@ -3,6 +3,46 @@
 Shift scheduling & attendance REST API — **Go/Gin + MySQL + JWT + Docker**.
 `database/sql` tanpa ORM, migrasi goose. Data contoh fiktif (portofolio).
 
+## Purpose, Output & Expectations
+
+**Purpose.** Small businesses (cafes, retail, kitchens) schedule staff on
+spreadsheets or chat: shifts overlap, no one tracks hours, overtime pay is
+guesswork. Shiftbase replaces that with one API: roster, attendance, and
+payroll inputs in a single system.
+
+**Output.** A running API (`:8080`) with JWT auth, role-based access
+(admin/manager/staff), conflict-free shift planning, check-in/out attendance,
+CSV employee import, and overtime/coverage reports — plus Swagger + Postman
+contracts and a green CI pipeline (Newman included).
+
+**Expectations.** After deploying: no double-booked shifts (409 on overlap),
+every workday has check-in/out records, overtime is computed (> 8 h/day,
+Asia/Jakarta) instead of estimated, and headcount gaps are visible per date.
+
+## Features
+
+| Feature | Description |
+|---|---|
+| Auth | - Register (default role staff), login returning a 24 h JWT, `/me` profile. - Purpose: single sign-in for all roles. Output: bearer token used by every endpoint. |
+| Employees | - Create, read, update, delete employees (name, email, phone, position, hire date). - Purpose: one master roster instead of scattered lists. Output: employee IDs referenced by shifts and attendance. |
+| Shifts | - Plan shifts per employee/date with start/end times; overlapping shifts rejected (409). - Purpose: conflict-free rostering. Output: a roster where no employee works two places at once. |
+| Attendance | - Check-in/out (staff locked to their own record); history filterable by date range. - Purpose: proof of presence for payroll. Output: daily hours feeding overtime math. |
+| CSV Import | - Bulk import employees (`name,email,phone,position,hire_date`, max 2 MB) with per-row error report. - Purpose: onboard dozens of staff at once. Output: imported/failed counts + row-level errors. |
+| Reports | - Overtime per employee and headcount coverage per date. - Purpose: payroll inputs and gap detection. Output: overtime hours and daily headcount. |
+
+## How It Works
+
+```mermaid
+flowchart TD
+    C[Client] --> A[POST /v1/auth/login]
+    A --> T[JWT 24h]
+    T --> R[RBAC middleware: admin/manager/staff]
+    R --> M[Modules: employees, shifts, attendance, reports]
+    M --> DB[(MySQL)]
+    M --> O[Conflict check: overlap = 409]
+    M --> OT[Overtime = GREATEST(hours-8, 0)/day, Asia/Jakarta]
+```
+
 ## Quickstart 5 menit
 
 ```bash
