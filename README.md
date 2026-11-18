@@ -51,7 +51,8 @@ flowchart TD
 
 ```bash
 git clone https://github.com/RakhaYandra/shiftbase.git && cd shiftbase
-cp .env.example .env                     # ganti JWT_SECRET di prod
+# JWT_SECRET wajib (min 32 karakter); docker compose menolak start tanpa itu.
+export JWT_SECRET="$(openssl rand -hex 32)"
 docker compose up --build                # api:8080, mysql:3306, adminer:8082
 go install github.com/pressly/goose/v3/cmd/goose@v3.28.0
 goose -dir migrations mysql "shift:shiftpass@tcp(localhost:3306)/shiftbase?parseTime=true" up

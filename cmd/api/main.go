@@ -10,7 +10,10 @@ import (
 )
 
 func main() {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("config: %v", err)
+	}
 	db, err := repository.Open(cfg.DBDSN)
 	if err != nil {
 		log.Fatalf("db: %v", err)
